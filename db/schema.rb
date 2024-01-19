@@ -10,17 +10,32 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_19_134907) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_19_181543) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
   enable_extension "uuid-ossp"
 
-  create_table "doctors", force: :cascade do |t|
+  create_table "consultations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "doctor_id", null: false
+    t.uuid "patient_id", null: false
+    t.datetime "scheduled_at"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["doctor_id", "patient_id"], name: "index_consultations_on_doctor_id_and_patient_id", unique: true
+    t.index ["doctor_id"], name: "index_consultations_on_doctor_id"
+    t.index ["patient_id"], name: "index_consultations_on_patient_id"
+    t.index ["scheduled_at"], name: "index_consultations_on_scheduled_at"
+  end
+
+  create_table "doctors", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
     t.string "name"
     t.string "specialization"
     t.integer "experience_years"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_doctors_on_user_id"
   end
 
   create_table "jwt_denylist", force: :cascade do |t|
@@ -29,6 +44,16 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_19_134907) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["jti"], name: "index_jwt_denylist_on_jti"
+  end
+
+  create_table "medical_records", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "patient_id", null: false
+    t.uuid "consultation_id", null: false
+    t.string "file_key", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["consultation_id"], name: "index_medical_records_on_consultation_id"
+    t.index ["patient_id"], name: "index_medical_records_on_patient_id"
   end
 
   create_table "patients", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -59,5 +84,10 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_19_134907) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "consultations", "doctors"
+  add_foreign_key "consultations", "patients"
+  add_foreign_key "doctors", "users"
+  add_foreign_key "medical_records", "consultations"
+  add_foreign_key "medical_records", "patients"
   add_foreign_key "patients", "users"
 end
