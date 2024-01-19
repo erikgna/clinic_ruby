@@ -4,7 +4,11 @@ class PatientsController < ApplicationController
 
   # GET /patients
   def index
-    @patients = Patient.all
+    if params[:search].present? || params[:age].present? || params[:gender].present? || params[:diagnosis].present?
+      @patients = search_patients.page(params[:page]).per(params[:per_page] || 10)
+    else
+      @patients = Patient.page(params[:page]).per(params[:per_page] || 10)
+    end
 
     render json: @patients
   end
@@ -16,7 +20,7 @@ class PatientsController < ApplicationController
 
   # POST /patients
   def create
-    @patient = Patient.new(patient_params)
+    @patient = current_user.patients.build(patient_params)
 
     if @patient.save
       render json: @patient, status: :created, location: @patient
@@ -48,5 +52,16 @@ class PatientsController < ApplicationController
     # Only allow a list of trusted parameters through.
     def patient_params
       params.require(:patient).permit(:name, :age, :gender, :diagnosis)
+    end
+
+    def search_patients
+      query = Patient.all
+  
+      query = query.where("name LIKE ?", "%#{params[:search]}%") if params[:search].present?
+      query = query.where(age: params[:age]) if params[:age].present?
+      query = query.where(gender: params[:gender]) if params[:gender].present?
+      query = query.where("diagnosis LIKE ?", "%#{params[:diagnosis]}%") if params[:diagnosis].present?
+  
+      query
     end
 end

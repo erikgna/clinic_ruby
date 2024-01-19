@@ -1,4 +1,5 @@
 class Users::RegistrationsController < Devise::RegistrationsController
+  before_action :configure_permitted_parameters
   respond_to :json
 
   private
@@ -20,5 +21,10 @@ class Users::RegistrationsController < Devise::RegistrationsController
     render json: {
       message: "Something went wrong."
     }
+  end
+
+  def configure_permitted_parameters
+    devise_parameter_sanitizer.permit(:sign_up, keys: [:admin])
+    devise_parameter_sanitizer.permit(:account_update, keys: [:admin])
   end
 end
